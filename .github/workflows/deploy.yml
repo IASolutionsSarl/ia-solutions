@@ -27,8 +27,8 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: 8I9z2.ftp.infomaniak.com
-          username: 8I9z2_yann
+          host: 8l9z2.ftp.infomaniak.com
+          username: 8l9z2_yann
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/clients/a2b197dd3e7339d2b359279e39abf149/sites/iasolutions.ch
@@ -41,6 +41,6 @@ jobs:
           switches: -avzr --delete
           path: dist/
           remote_path: /home/clients/a2b197dd3e7339d2b359279e39abf149/sites/iasolutions.ch
-          remote_host: 8I9z2.ftp.infomaniak.com
-          remote_user: 8I9z2_yann
+          remote_host: 8l9z2.ftp.infomaniak.com
+          remote_user: 8l9z2_yann
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
