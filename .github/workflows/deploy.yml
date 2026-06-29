@@ -24,12 +24,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Download icons referenced in build
-        run: |
-          grep -roh '"/icons/[^"]*\.svg"' dist/ | sort -u | tr -d '"' | while read path; do
-            mkdir -p "dist$(dirname $path)"
-            curl -sf "https://cdn.weweb.io$path" -o "dist$path" || true
-          done
+      - name: Copy public assets to dist (Vite 8/Rolldown fix)
+        run: cp -r public/icons public/fonts dist/
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
