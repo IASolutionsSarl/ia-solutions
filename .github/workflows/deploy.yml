@@ -24,6 +24,10 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Fix icon colors (WeWeb static export bug)
+        run: |
+          sed -i 's|</head>|<style>.ww-icon svg path { stroke: #6B46C1 !important; }</style></head>|' dist/index.html
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
