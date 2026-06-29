@@ -27,9 +27,6 @@ jobs:
       - name: Copy public assets to dist
         run: cp -r public/icons public/fonts dist/
 
-      - name: Create .htaccess for Apache
-        run: printf 'Options -MultiViews\nRewriteEngine On\nRewriteCond %%{REQUEST_FILENAME} !-f\nRewriteCond %%{REQUEST_FILENAME} !-d\nRewriteRule ^ /index.html [L]\n\n<IfModule mod_mime.c>\n    AddType image/svg+xml .svg\n    AddType font/woff .woff\n    AddType font/woff2 .woff2\n</IfModule>\n' > dist/.htaccess
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
