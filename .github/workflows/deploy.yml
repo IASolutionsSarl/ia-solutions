@@ -24,8 +24,24 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Copy public assets to dist (Vite 8/Rolldown fix)
+      - name: Copy public assets to dist
         run: cp -r public/icons public/fonts dist/
+
+      - name: Create .htaccess for Apache
+        run: |
+          cat > dist/.htaccess << 'EOF'
+Options -MultiViews
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /index.html [L]
+
+<IfModule mod_mime.c>
+    AddType image/svg+xml .svg
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
+</IfModule>
+EOF
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
