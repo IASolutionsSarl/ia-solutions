@@ -29,16 +29,7 @@ jobs:
           WOFF=$(find dist/fonts/Phosphor -name "*.woff" | head -1)
           if [ -n "$WOFF" ]; then
             B64=$(base64 -w 0 "$WOFF")
-            cat > dist/fonts/Phosphor/font.css << 'CSSEOF'
-@font-face {
-  font-family: 'Phosphor';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('data:font/woff;base64,PLACEHOLDER') format('woff');
-}
-CSSEOF
-            sed -i "s|PLACEHOLDER|$B64|" dist/fonts/Phosphor/font.css
+            printf "@font-face {\n  font-family: 'Phosphor';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url('data:font/woff;base64,%s') format('woff');\n}\n" "$B64" > dist/fonts/Phosphor/font.css
           fi
 
       - name: Deploy via SSH
