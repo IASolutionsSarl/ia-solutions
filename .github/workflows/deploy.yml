@@ -24,23 +24,9 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Embed Phosphor font as base64 (Infomaniak blocks .woff)
+      - name: Fix icon paths (point to WeWeb CDN instead of local)
         run: |
-          echo "--- Searching for woff files ---"
-          find dist -name "*.woff" -o -name "*.woff2" | head -20
-          echo "--- Fonts directory ---"
-          find dist -type d -name "*font*" -o -type d -name "*Font*" | head -10
-          WOFF=$(find dist -name "*.woff" | head -1)
-          echo "WOFF found: $WOFF"
-          if [ -n "$WOFF" ]; then
-            CSS=$(find dist -path "*/Phosphor/font.css" | head -1)
-            echo "CSS found: $CSS"
-            B64=$(base64 -w 0 "$WOFF")
-            printf "@font-face {\n  font-family: 'Phosphor';\n  font-style: normal;\n  font-weight: 400;\n  font-display: swap;\n  src: url('data:font/woff;base64,%s') format('woff');\n}\n" "$B64" > "${CSS:-dist/fonts/Phosphor/font.css}"
-            echo "Done. CSS size: $(wc -c < "${CSS:-dist/fonts/Phosphor/font.css}") bytes"
-          else
-            echo "No woff file found!"
-          fi
+          find dist -name "*.js" -exec sed -i 's|/icons/|https://cdn.weweb.io/icons/|g' {} +
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
