@@ -29,22 +29,22 @@ jobs:
 
       - name: Embed Phosphor font as base64
         run: |
-          python3 -c "
-import base64
-woff_path = 'dist/fonts/Phosphor/f7383446-7c0a-4070-ade4-34001920a0f4.woff'
-css_path = 'dist/fonts/Phosphor/font.css'
-with open(woff_path, 'rb') as f:
-    b64 = base64.b64encode(f.read()).decode()
-with open(css_path, 'r') as f:
-    css = f.read()
-css = css.replace(
-    \"url(f7383446-7c0a-4070-ade4-34001920a0f4.woff) format('woff')\",
-    f\"url('data:font/woff;base64,{b64}') format('woff')\"
-)
-with open(css_path, 'w') as f:
-    f.write(css)
-print('Font embarquee OK')
-"
+          cat > embed_font.py << 'PYEOF'
+          import base64
+          woff_path = 'dist/fonts/Phosphor/f7383446-7c0a-4070-ade4-34001920a0f4.woff'
+          css_path = 'dist/fonts/Phosphor/font.css'
+          with open(woff_path, 'rb') as f:
+              b64 = base64.b64encode(f.read()).decode()
+          with open(css_path, 'r') as f:
+              css = f.read()
+          old = "url(f7383446-7c0a-4070-ade4-34001920a0f4.woff) format('woff')"
+          new = "url('data:font/woff;base64," + b64 + "') format('woff')"
+          css = css.replace(old, new)
+          with open(css_path, 'w') as f:
+              f.write(css)
+          print('Font embarquee OK')
+          PYEOF
+          python3 embed_font.py
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
