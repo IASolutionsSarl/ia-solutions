@@ -25,7 +25,7 @@ jobs:
         run: npm run build
 
       - name: Copy public assets to dist
-        run: cp -r public/icons public/fonts dist/
+        run: cp -r public/icons public/fonts public/.htaccess dist/
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
@@ -35,7 +35,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/clients/a2b197dd3e7339d2b359279e39abf149/sites/iasolutions.ch
-            rm -rf *
+            rm -rf * .htaccess
             exit 0
 
       - name: Upload files via rsync
