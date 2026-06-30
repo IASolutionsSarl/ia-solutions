@@ -27,6 +27,13 @@ jobs:
       - name: Copy public assets to dist
         run: cp -r public/icons public/fonts public/.htaccess dist/
 
+      - name: Debug - vérifier dist
+        run: |
+          echo "=== Contenu dist/ ==="
+          ls dist/
+          echo "=== Icons ==="
+          ls dist/icons/ 2>/dev/null || echo "DOSSIER ICONS ABSENT"
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
