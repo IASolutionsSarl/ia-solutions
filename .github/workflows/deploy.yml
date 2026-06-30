@@ -27,6 +27,17 @@ jobs:
       - name: Copy public assets to dist
         run: cp -r public/icons public/fonts public/.htaccess dist/ && cp public/icons/.htaccess dist/icons/
 
+      - name: Embed Phosphor font as base64
+        run: |
+          woff="dist/fonts/Phosphor/f7383446-7c0a-4070-ade4-34001920a0f4.woff"
+          if [ -f "$woff" ]; then
+            b64=$(base64 -w 0 "$woff")
+            sed -i "s|url(f7383446-7c0a-4070-ade4-34001920a0f4.woff) format('woff')|url('data:font/woff;base64,$b64') format('woff')|" dist/fonts/Phosphor/font.css
+            echo "Font embarquée OK"
+          else
+            echo "ERREUR: fichier woff introuvable"
+          fi
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
