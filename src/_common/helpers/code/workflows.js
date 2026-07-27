@@ -1085,6 +1085,22 @@ export async function executeWorkflowAction(
                 const catchScopeId = `${workflow.id}_${actionId}_catch`;
                 const finallyScopeId = `${workflow.id}_${actionId}_finally`;
                 let branchStop = false;
+                // Persist the try/catch result (incl. caughtError) before running the catch/finally
+                // branches, so their actions can read context.workflow[actionId].result.caughtError.
+                // Without this, the result is only written after the whole switch completes (below),
+                // i.e. too late for the branches that run inside this case.
+                const persistTryCatchResult = () => {
+                    if (internal) {
+                        set(context.component, `workflowsResults.${workflow.id}.${actionId}.result`, result);
+                    } else {
+                        wwLib.$store.dispatch('data/setWorkflowActionResult', {
+                            workflowId: workflow.id,
+                            actionId,
+                            result,
+                            error: null,
+                        });
+                    }
+                };
                 try {
                     const { error: tryError, stop: tryStop } = await executeWorkflowActions(workflow, branches.try, {
                         isError,
@@ -1104,6 +1120,7 @@ export async function executeWorkflowAction(
                     }
                 } catch (error) {
                     cleanupScopedWorkflowVariables(workflow.id, tryScopeId, internal, context);
+                    persistTryCatchResult();
                     if (branches.catch) {
                         const { error: catchError, stop: catchStop } = await executeWorkflowActions(
                             workflow,
@@ -1125,6 +1142,7 @@ export async function executeWorkflowAction(
                     }
                 } finally {
                     if (branches.finally) {
+                        persistTryCatchResult();
                         const { stop: finallyStop } = await executeWorkflowActions(workflow, branches.finally, {
                             isError,
                             context,
