@@ -4,7 +4,7 @@
         <!-- __WW_PAGE_MADE_WITH_WEWEB__ -->
         <div v-if="page && page.pageLoaded" class="sections-wrapper">
             <template v-for="(section, index) in sections" :key="section.uid">
-                <!-- wwFront:start -->
+                 <!-- wwFront:start -->
                 <div class="placeholder-section" :data-placeholder-section-uid="section.uid"></div>
                 <!-- wwFront:end -->
                 <wwSection
@@ -14,7 +14,7 @@
                     :ww-responsive="`ww-section-${index}`"
                 />
             </template>
-         </div>
+          </div>
          <!-- POPUPS -->
         <transition name="ww-front-popups" tag="div">
             <wwLinkPopup
@@ -38,6 +38,7 @@ import wwPageLoadProgress from '@/_front/components/wwPageLoadProgress.vue';
 import { getBackgroundStyle } from '@/_front/helpers/wwBackgroungStyle.js';
 import { usePopupStore } from '@/pinia/popup.js';
 import wwFrontPopup from '@/_front/components/wwFrontPopup.vue';
+import { usePageStyleCompilerRuntime } from '@/_front/use/useStyleCompilerRuntime';
 
 /* wwFront:start */
 import { useHead } from '@unhead/vue';
@@ -56,7 +57,10 @@ export default {
 
         const designInfo = computed(() => store.getters['websiteData/getDesignInfo'] || {});
 
+ 
         /* wwFront:start */
+        usePageStyleCompilerRuntime('runtime');
+
         const homePage = computed(
             () => store.getters['websiteData/getPageById'](designInfo.value.homePageId) || { id: null, meta: {} }
         );
@@ -164,39 +168,57 @@ export default {
 </script>
 
 <style lang="scss">
-html {
-    overflow-x: hidden;
-    width: 100%;
+@layer ww-style-core {
+    html {
+        overflow-x: hidden;
+        width: 100%;
 
-    &.ww-link-popup-open {
-        overflow-y: hidden;
+        &.ww-link-popup-open {
+            overflow-y: hidden;
+        }
     }
 }
  </style>
 
 <style scoped lang="scss">
-.website-wrapper {
-    height: 100%;
-    .placeholder-section {
-        opacity: 0;
-        height: 0;
-        width: 0;
-        overflow: hidden;
-        pointer-events: none;
+@layer ww-style-core {
+    .website-wrapper {
+        height: 100%;
+
+        .placeholder-section {
+            opacity: 0;
+            height: 0;
+            width: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .sections-wrapper {
+            position: relative;
+            isolation: isolate;
+        }
+
+        .ww-section-drag-placeholder {
+            position: relative;
+            box-sizing: border-box;
+            min-height: 80px;
+            border: 1px dashed var(--ww-color-border-brand);
+            border-radius: var(--ww-border-radius-02);
+            background: transparent;
+            overflow: hidden;
+            pointer-events: none;
+        }
     }
 
- 
-    .sections-wrapper {
-        position: relative;
-        isolation: isolate;
-     }
+    .ww-front-popups-enter-active,
+    .ww-front-popups-leave-active {
+        transition: all 0.3s;
+    }
+    .ww-front-popups-enter-from,
+    .ww-front-popups-leave-to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
 }
-.ww-front-popups-enter-active,
-.ww-front-popups-leave-active {
-    transition: all 0.3s;
-}
-.ww-front-popups-enter-from, .ww-front-popups-leave-to /* .list-leave-active below version 2.1.8 */ {
-    opacity: 0;
-    transform: scale(0.95);
-}
+
  </style>

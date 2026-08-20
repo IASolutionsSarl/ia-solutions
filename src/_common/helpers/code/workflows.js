@@ -11,7 +11,7 @@ import { usePopupStore } from '@/pinia/popup';
 import { useBackTableViewsStore } from '@/pinia/backTableViews.js';
 import { betterFetch } from '@better-fetch/fetch';
 import integrationsCore from '@/_front/integrations/index.js';
-import { useIntegrationsStore } from '@/pinia/integrations.js';
+import { useIntegrationsStore } from '@/pinia/integrations';
 import { useBackAuthStore } from '@/pinia/backAuth';
  
 export async function executeWorkflow(
@@ -1645,7 +1645,12 @@ export async function executeWorkflowAction(
         }
 
         // Generic stream handling
-        if (action.args?.__wwstream === true && result && typeof result === 'object' && Symbol.asyncIterator in result) {
+        if (
+            action.args?.__wwstream === true &&
+            result &&
+            typeof result === 'object' &&
+            Symbol.asyncIterator in result
+        ) {
             const chunks = [];
 
             if (internal) {

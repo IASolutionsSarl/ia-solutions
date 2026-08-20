@@ -1,3 +1,4 @@
+import './styleCompiler/ww-style-page-c11eb45b-0a3a-4642-a4fe-10bf9e05a023.css';
 // eslint-disable-next-line no-unused-vars
 import app from '@/_front/main.js';
 

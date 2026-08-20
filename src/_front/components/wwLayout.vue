@@ -3,55 +3,49 @@
         :is="tag"
         class="ww-layout"
         :data-ww-layout-id="layoutId"
+        :data-ww-layout-owner-type="parentElementUid ? 'element' : sectionId ? 'section' : undefined"
+        :data-ww-layout-owner-uid="parentElementUid || sectionId || undefined"
+        :data-ww-layout-style-scopes="layoutStyleScopes"
         :class="{
          }"
-        :style="layoutStyle"
+        :style="layoutDomStyle"
     >
         <slot name="header"></slot>
          <template v-if="internalList[0]">
-            <wwLayoutItemContext
+            <template
                 v-for="index in restrictedLength"
                 :key="isBound ? `${internalList[0].uid}_${index - 1}` : `${internalList[index - 1].uid}`"
-                :index="offset + index - 1"
-                :item="isBound ? internalList[0] : internalList[index - 1]"
-                :is-repeat="isBound"
-                :data="isBound && boundData ? boundData[offset + index - 1] : null"
-                :repeated-items="boundData"
             >
-                <slot
-                    v-bind="{
-                        item: isBound ? internalList[0] : internalList[index - 1],
-                        index: offset + index - 1,
-                        data: isBound && boundData ? boundData[offset + index - 1] : null,
-                        layoutId,
-                        itemStyle: getItemStyle(index - 1),
-                     }"
+                 <wwLayoutItemContext
+                    :index="offset + index - 1"
+                    :item="isBound ? internalList[0] : internalList[index - 1]"
+                    :is-repeat="isBound"
+                    :data="isBound && boundData ? boundData[offset + index - 1] : null"
+                    :repeated-items="boundData"
                 >
-                    <wwElement
-                        v-bind="isBound ? internalList[0] : internalList[index - 1]"
-                        :extra-style="getItemStyle(index - 1)"
-                    ></wwElement>
-                </slot>
-            </wwLayoutItemContext>
-        </template>
+                    <slot
+                        v-bind="{
+                            item: isBound ? internalList[0] : internalList[index - 1],
+                            index: offset + index - 1,
+                            data: isBound && boundData ? boundData[offset + index - 1] : null,
+                            layoutId,
+                         }"
+                    >
+                        <wwElement v-bind="isBound ? internalList[0] : internalList[index - 1]"></wwElement>
+                    </slot>
+                </wwLayoutItemContext>
+            </template>
+         </template>
      </component>
 </template>
 
 <script>
-const PUSH_LAST_STYLE_VERTICAL = {
-    marginTop: 'auto',
-};
-const PUSH_LAST_STYLE_HORIZONTAL = {
-    marginLeft: 'auto',
-};
-import { computed, inject, toRef, reactive, provide, onUnmounted, ref } from 'vue';
-
+import { computed, inject, toRef } from 'vue';
+ 
 import { useParentContentProperty } from '@/_common/use/useComponent.js';
-import { getDisplayValue } from '@/_common/helpers/component/component.js';
-import { inheritFrom } from '@/_common/helpers/configuration/configuration.js';
-
-import { getLayoutStyleFromContent } from '@/_front/helpers/wwLayoutStyle.js';
+ 
 import { useRestoreContext } from '@/_front/use/useRestoreContext.js';
+import { useLayoutStyleScopeAttribute } from '@/_front/use/useLayoutStyleScopes';
 
 import wwLayoutItem from './wwLayoutItem.vue';
 import wwLayoutItemContext from './wwLayoutItemContext.vue';
@@ -77,15 +71,13 @@ export default {
     setup(props, { emit }) {
         const id = layoutId++;
         const parentElementUid = inject('_wwElementUid', null);
+        const layoutStyleScopes = useLayoutStyleScopeAttribute(() => parentElementUid);
         const parentElementComponentId = inject('_wwElementComponentId', null);
         const sectionId = inject('sectionId', null);
         const bindingContext = inject('bindingContext', null);
 
         const componentContent = inject('componentContent');
-        const componentStyle = inject('componentStyle');
-        const componentConfiguration = inject('componentConfiguration');
-        const componentWwProps = inject('componentWwProps');
-
+ 
         const { rawProperty, property } = useParentContentProperty(toRef(props, 'path'));
 
         useRestoreContext({ path: toRef(props, 'path') });
@@ -141,46 +133,26 @@ export default {
             return boundData.value ? boundData.value.length : 0;
         });
 
-        const componentContext = {
-            content: componentContent,
-            wwProps: componentWwProps,
-        };
-
         let restrictedLength;
          /* wwFront:start */
         // eslint-disable-next-line vue/no-ref-as-operand
         restrictedLength = length;
         /* wwFront:end */
 
-        const layoutStyle = computed(() => {
-            if (props.direction) {
-                return {
-                    flexDirection: props.direction,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                };
-            } else if (inheritFrom(componentConfiguration, 'ww-layout')) {
-                return getLayoutStyleFromContent(
-                    componentContent,
-                    componentStyle,
-                    componentConfiguration,
-                    componentContext
-                );
-            } else {
-                return {};
-            }
-        });
+        // Fixed centered flex when the `direction` prop is set (component-level convenience layout, not
+        // driven by element data → not covered by the style compiler → rendered inline). Front + editor.
+        const layoutDomStyle = computed(() =>
+            props.direction
+                ? { flexDirection: props.direction, display: 'flex', justifyContent: 'center', alignItems: 'center' }
+                : {}
+        );
 
  
-        const __wwContainerType = computed(() =>
-            getDisplayValue(componentStyle.display, componentConfiguration, componentContext)
-        );
-        provide('__wwContainerType', __wwContainerType);
-
+ 
         return {
             layoutId: id,
-            layoutStyle,
+            layoutDomStyle,
+            layoutStyleScopes,
             parentElementUid,
             sectionId,
             rawProperty,
@@ -193,7 +165,6 @@ export default {
             offset,
             paginationOptions,
             componentContent,
-            componentStyle,
             restrictedLength,
          };
     },
@@ -203,34 +174,21 @@ export default {
     watch: {
      },
      methods: {
-        // TODO: one day extrastyle should be removed, now that we do not have wrapper anymore maybe?
-        getItemStyle(index) {
-            if (this.componentContent['_ww-layout_pushLast']) {
-                const push = !this.componentContent['_ww-layout_reverse']
-                    ? index === this.restrictedLength - 1
-                    : index === 0;
-                if (!push) return;
-                // This is very important here to return const here
-                // Big performance issue if we recreate object at each call
-                return this.componentContent['_ww-layout_flexDirection'] === 'column'
-                    ? PUSH_LAST_STYLE_VERTICAL
-                    : PUSH_LAST_STYLE_HORIZONTAL;
-            }
-            return;
-        },
      },
 };
 </script>
 
 <style lang="scss">
-/* No Scoped css to be easily overwrite */
-.ww-layout {
-    display: flex;
-    pointer-events: initial;
-    position: relative;
+@layer ww-style-reset {
+    /* Shared primitive defaults intentionally stay below coded component CSS. */
+    .ww-layout {
+        display: flex;
+        pointer-events: initial;
+        position: relative;
+    }
+}
 
- }
-</style>
+ </style>
 
 <style lang="scss" scoped>
  </style>
