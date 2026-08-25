@@ -3,7 +3,15 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { STYLE_COMPONENT_LAYER, STYLE_CORE_LAYER, STYLE_LAYER_ORDER, STYLE_RESET_LAYER } from './types';
+import {
+    STYLE_COMPONENT_LAYER,
+    STYLE_CORE_LAYER,
+    STYLE_LAYER_ORDER,
+    STYLE_LAYOUT_OVERRIDE_LAYER,
+    STYLE_RESET_LAYER,
+    STYLE_RULE_GROUP_LAYERS,
+    STYLE_RUNTIME_LAYER,
+} from './types';
 
 describe('style compiler layers', () => {
     it('keeps shared defaults below components and runtime implementation CSS above them', () => {
@@ -12,6 +20,12 @@ describe('style compiler layers', () => {
         );
         expect(STYLE_LAYER_ORDER.indexOf(STYLE_COMPONENT_LAYER)).toBeLessThan(
             STYLE_LAYER_ORDER.indexOf(STYLE_CORE_LAYER)
+        );
+        expect(STYLE_LAYER_ORDER.indexOf(STYLE_RULE_GROUP_LAYERS.element)).toBeLessThan(
+            STYLE_LAYER_ORDER.indexOf(STYLE_LAYOUT_OVERRIDE_LAYER)
+        );
+        expect(STYLE_LAYER_ORDER.indexOf(STYLE_LAYOUT_OVERRIDE_LAYER)).toBeLessThan(
+            STYLE_LAYER_ORDER.indexOf(STYLE_RUNTIME_LAYER)
         );
     });
 
@@ -38,5 +52,13 @@ describe('style compiler layers', () => {
         expect(wwLayout).toMatch(
             /@layer ww-style-reset\s*\{[\s\S]*?\.ww-layout\s*\{[\s\S]*?pointer-events:\s*initial;/
         );
+    });
+
+    it('keeps logical-item push-last out of generated and shared CSS', () => {
+        const commonCssPath = fileURLToPath(new URL('../../../assets/css/common.css', import.meta.url));
+        const commonCss = readFileSync(commonCssPath, 'utf8');
+
+        expect(commonCss).not.toContain('data-ww-layout-push-last');
+        expect(commonCss).not.toContain(':has(');
     });
 });

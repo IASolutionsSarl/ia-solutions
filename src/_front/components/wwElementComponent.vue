@@ -9,6 +9,7 @@
         class="ww-element"
         :class="[state.class || '', ...styleClasses]"
         v-bind="componentAttributes"
+        v-bind:[LAYOUT_ITEM_ATTRIBUTE]="wwLayoutItemAttribute"
         :content="content"
         :uid="uid"
         :ww-front-state="wwFrontState"
@@ -43,6 +44,8 @@ import { useComponentStates } from '@/_front/use/useComponentStates';
 import { useComponentActions } from '@/_common/use/useActions';
 import { useElementLocalContext } from '@/_front/use/useElementLocalContext';
 import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
+import { consumeLayoutItemStyle, useLayoutItemAttribute, useLayoutItemIndex } from '@/_front/use/useLayoutItemMarker';
+import { LAYOUT_ITEM_ATTRIBUTE } from '@/_common/helpers/styleCompiler/layoutContract';
 import { createComponentId } from '@/_front/services/componentIds';
 import { getElementStyleResetClasses } from '@/_front/helpers/elementStyleReset';
 
@@ -76,6 +79,7 @@ export default {
         libraryComponentData: { type: Object, default: null },
         libraryComponentTriggerEvent: { type: Function, default: null },
         libraryComponentTriggerLibraryComponentEvent: { type: Function, default: null },
+        extraStyle: { type: Object, default: null },
      },
     // update:child-selected and update:is-selected are used by useElementSelection
     emits: ['element-event', 'update:child-selected', 'update:is-selected', 'add-state', 'remove-state'],
@@ -84,6 +88,9 @@ export default {
         const component = shallowRef(null);
 
         const wwLayoutContext = inject('wwLayoutContext', {});
+        const wwLayoutIndex = useLayoutItemIndex();
+        const wwLayoutItemAttribute = useLayoutItemAttribute(wwLayoutIndex);
+        const wwLayoutItemStyle = consumeLayoutItemStyle();
         const bindingContext = inject('bindingContext', null);
         const sectionId = inject('sectionId', null);
         const wwLibraryComponentUid_ = inject('wwLibraryComponentUid_', null);
@@ -273,6 +280,10 @@ export default {
             wwTechnicalAttributes,
             currentStatesAttribute,
             forcedStatesAttribute,
+            wwLayoutIndex,
+            wwLayoutItemAttribute,
+            wwLayoutItemStyle,
+            LAYOUT_ITEM_ATTRIBUTE,
          };
     },
     computed: {
@@ -327,11 +338,12 @@ export default {
             STYLE
         \================================================================================================*/
         elementStyle() {
-            // Everything is rendered by the style compiler (CSS). The editor still layers an inline
-            // animation override for the canvas preview; the published build has no inline style at all.
+            // Authored styles are rendered by the compiler. The consumed layout-item style makes the
+            // runtime contract independent from slot forwarding; explicit extraStyle remains compatible
+            // with older/custom layout adapters and wins when both paths are present.
              /* wwFront:start */
             // eslint-disable-next-line no-unreachable
-            return {};
+            return { ...(this.wwLayoutItemStyle || {}), ...(this.extraStyle || {}) };
             /* wwFront:end */
         },
  

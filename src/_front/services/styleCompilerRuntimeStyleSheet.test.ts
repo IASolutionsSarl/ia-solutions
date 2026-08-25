@@ -41,6 +41,38 @@ describe('styleCompilerRuntimeStyleSheet', () => {
         expect(getFirstStyleRule(elementLayer)).toBeUndefined();
     });
 
+    it('preserves zero-specificity layout selectors when mounting runtime variables', () => {
+        const doc = new FakeDocument();
+        Object.assign(wwLib, {
+            getFrontDocument: () => doc,
+            wwLog: { warn: vi.fn() },
+        });
+        const variable: StyleDynamicVariable = {
+            ...createWidthVariable(),
+            surface: {
+                ...createWidthVariable().surface,
+                runtimeScopeSelector: '.ww-element-sized',
+            },
+            selector:
+                ':where(.ww-element-sized.ww-layout[data-ww-states~="active"]) > .ww-element[data-ww-layout-item]',
+        };
+
+        const stop = setStyleCompilerRuntimeVariable({
+            componentId: 'instance-layout',
+            variable,
+            cssValue: '100px',
+        });
+        const styleRule = collectRules(doc.styleElement.sheet).find(
+            (rule): rule is FakeStyleRule => rule instanceof FakeStyleRule
+        );
+
+        expect(styleRule?.selectorText).toBe(
+            ':where([data-ww-component-id="instance-layout"].ww-layout[data-ww-states~="active"]) > .ww-element[data-ww-layout-item]'
+        );
+
+        stop();
+    });
+
     it('replaces a runtime value with a clear rule and restores the value without stale declarations', async () => {
         const doc = new FakeDocument();
         Object.assign(wwLib, {
@@ -80,6 +112,42 @@ describe('styleCompilerRuntimeStyleSheet', () => {
 
         expect(getRuntimeDeclaration(doc, '--ww-style-border')).toBe('3px solid blue');
         expect(getGeneratedLayerDeclaration(doc, 'element', 'border')).toBe('');
+
+        scope.stop();
+        stopRegistration();
+    });
+
+    it('mounts a multiline legacy gradient formula without clearing the authored background', async () => {
+        const doc = new FakeDocument();
+        Object.assign(wwLib, {
+            getFrontDocument: () => doc,
+            wwLog: { warn: vi.fn() },
+        });
+        const gradient = `linear-gradient(
+    212deg,
+    #015186 0%,
+    #039559 100%
+)`;
+        executeStyleFormula.mockReturnValue({ status: 'resolved', value: gradient });
+        const variable = createBackgroundGradientVariable();
+        const stopRegistration = registerStyleDynamicVariable(variable);
+        const scope = effectScope();
+        const element = {
+            nodeType: 1,
+            style: {},
+            getAttribute: () => 'instance-gradient',
+        } as unknown as HTMLElement;
+
+        scope.run(() => {
+            useStyleCompilerDynamicVariables({
+                sourceUid: 'gradient',
+                targets: { element: ref(element) },
+            });
+        });
+        await nextTick();
+
+        expect(getRuntimeDeclaration(doc, '--ww-style-background-gradient')).toBe(gradient);
+        expect(getGeneratedLayerDeclaration(doc, 'element', 'background')).toBe('');
 
         scope.stop();
         stopRegistration();
@@ -861,6 +929,28 @@ function createBorderVariable(): StyleDynamicVariable {
         cssProperty: 'border',
         validationProperty: 'border',
         selector: '.ww-element-bordered',
+    };
+}
+
+function createBackgroundGradientVariable(): StyleDynamicVariable {
+    return {
+        name: '--ww-style-background-gradient',
+        surface: {
+            key: 'element:gradient',
+            group: 'element',
+            kind: 'element',
+            selector: '.ww-element-gradient',
+        },
+        group: 'element',
+        sourceUid: 'gradient',
+        domain: 'style',
+        property: 'backgroundGradient',
+        state: 'base',
+        breakpoint: 'default',
+        value: { __wwtype: 'js', code: 'return variables.gradient' },
+        cssProperty: 'background',
+        validationProperty: 'background',
+        selector: '.ww-element-gradient',
     };
 }
 

@@ -82,6 +82,27 @@ describe('resolveStyleCompilerRuntimeVariable', () => {
         expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBeNull();
     });
 
+    it('supports runtime conditions that exclude exact legacy values', () => {
+        const values = new Map<string, unknown>([['direction', 'column']]);
+        const executor = createExecutor(values);
+        const variable = {
+            ...createPositionedVariable('margin-left', 'auto'),
+            condition: {
+                value: { __wwtype: 'f', code: 'direction' },
+                allowedValues: ['row', 'row-reverse', 'column-reverse'],
+                disallowedValues: ['column'],
+            },
+        } satisfies StyleDynamicVariable;
+
+        expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBeNull();
+
+        values.set('direction', 'row-reverse');
+        expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBe('auto');
+
+        values.set('direction', undefined);
+        expect(resolveStyleCompilerRuntimeVariable({ variable, context: {}, executor })).toBe('auto');
+    });
+
     it('supports truthy runtime conditions', () => {
         const values = new Map<string, unknown>([['alignment', undefined]]);
         const executor = createExecutor(values);
@@ -196,6 +217,55 @@ describe('resolveStyleCompilerRuntimeVariable', () => {
         expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
             status: 'value',
             cssValue: '100%',
+        });
+    });
+
+    it('distinguishes an undefined library width override from an explicit automatic size', () => {
+        const widthFormula = { __wwtype: 'f', code: 'width' };
+        const values = new Map<string, unknown>([['width', undefined]]);
+        const executor = createExecutor(values);
+        const variable = {
+            ...createPositionedVariable('width', widthFormula),
+            condition: undefined,
+            valueNormalizer: { type: 'component-size', fallbackValue: 'auto' },
+            omitWhenUndefined: true,
+        } satisfies StyleDynamicVariable;
+
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'empty',
+        });
+
+        values.set('width', 'auto');
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'value',
+            cssValue: 'auto',
+        });
+    });
+
+    it('uses section sizing for an explicit automatic direct-instance width but not for undefined', () => {
+        const widthFormula = { __wwtype: 'f', code: 'width' };
+        const values = new Map<string, unknown>([['width', undefined]]);
+        const executor = createExecutor(values);
+        const variable = {
+            ...createPositionedVariable('width', widthFormula),
+            condition: undefined,
+            valueNormalizer: { type: 'component-size' },
+            omitWhenUndefined: true,
+            runtimeFallback: {
+                type: 'when-all-empty',
+                dependencies: [],
+                value: 'var(--ww-section-root-auto-width, auto)',
+            },
+        } satisfies StyleDynamicVariable;
+
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'empty',
+        });
+
+        values.set('width', 'auto');
+        expect(resolveStyleCompilerRuntimeVariableResult({ variable, context: {}, executor })).toEqual({
+            status: 'value',
+            cssValue: 'var(--ww-section-root-auto-width, auto)',
         });
     });
 

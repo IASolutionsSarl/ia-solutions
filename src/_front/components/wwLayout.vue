@@ -19,6 +19,7 @@
                  <wwLayoutItemContext
                     :index="offset + index - 1"
                     :item="isBound ? internalList[0] : internalList[index - 1]"
+                    :item-style="getItemStyle(index - 1)"
                     :is-repeat="isBound"
                     :data="isBound && boundData ? boundData[offset + index - 1] : null"
                     :repeated-items="boundData"
@@ -29,9 +30,13 @@
                             index: offset + index - 1,
                             data: isBound && boundData ? boundData[offset + index - 1] : null,
                             layoutId,
+                            itemStyle: getItemStyle(index - 1),
                          }"
                     >
-                        <wwElement v-bind="isBound ? internalList[0] : internalList[index - 1]"></wwElement>
+                        <wwElement
+                            v-bind="isBound ? internalList[0] : internalList[index - 1]"
+                            :extra-style="getItemStyle(index - 1)"
+                        ></wwElement>
                     </slot>
                 </wwLayoutItemContext>
             </template>
@@ -46,6 +51,12 @@ import { useParentContentProperty } from '@/_common/use/useComponent.js';
  
 import { useRestoreContext } from '@/_front/use/useRestoreContext.js';
 import { useLayoutStyleScopeAttribute } from '@/_front/use/useLayoutStyleScopes';
+import { resetLayoutItemIndex } from '@/_front/use/useLayoutItemMarker';
+import {
+    createLayoutItemStyle,
+    createInheritedLayoutRuntimeStyle,
+    hasElementLayoutRootClass,
+} from '@/_front/helpers/wwLayoutRuntime';
 
 import wwLayoutItem from './wwLayoutItem.vue';
 import wwLayoutItemContext from './wwLayoutItemContext.vue';
@@ -68,8 +79,9 @@ export default {
         disableEdit: { type: Boolean, default: false },
     },
     emits: ['update:list'],
-    setup(props, { emit }) {
+    setup(props, { attrs, emit }) {
         const id = layoutId++;
+        resetLayoutItemIndex();
         const parentElementUid = inject('_wwElementUid', null);
         const layoutStyleScopes = useLayoutStyleScopeAttribute(() => parentElementUid);
         const parentElementComponentId = inject('_wwElementComponentId', null);
@@ -77,6 +89,7 @@ export default {
         const bindingContext = inject('bindingContext', null);
 
         const componentContent = inject('componentContent');
+        const componentLayoutRuntime = inject('componentLayoutRuntime');
  
         const { rawProperty, property } = useParentContentProperty(toRef(props, 'path'));
 
@@ -139,13 +152,23 @@ export default {
         restrictedLength = length;
         /* wwFront:end */
 
-        // Fixed centered flex when the `direction` prop is set (component-level convenience layout, not
-        // driven by element data → not covered by the style compiler → rendered inline). Front + editor.
-        const layoutDomStyle = computed(() =>
-            props.direction
-                ? { flexDirection: props.direction, display: 'flex', justifyContent: 'center', alignItems: 'center' }
-                : {}
-        );
+        // Fixed centered flex when the `direction` prop is set is component-level convenience layout.
+        // Otherwise only the two legacy block-only properties remain inline.
+        const layoutDomStyle = computed(() => {
+            if (!props.direction) {
+                return createInheritedLayoutRuntimeStyle(
+                    componentLayoutRuntime,
+                    hasElementLayoutRootClass(attrs.class)
+                );
+            }
+
+            return {
+                flexDirection: props.direction,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+            };
+        });
 
  
  
@@ -174,6 +197,15 @@ export default {
     watch: {
      },
      methods: {
+        getItemStyle(index) {
+            return createLayoutItemStyle({
+                index,
+                length: this.restrictedLength,
+                flexDirection: this.componentContent['_ww-layout_flexDirection'],
+                reverse: this.componentContent['_ww-layout_reverse'],
+                pushLast: this.componentContent['_ww-layout_pushLast'],
+            });
+        },
      },
 };
 </script>

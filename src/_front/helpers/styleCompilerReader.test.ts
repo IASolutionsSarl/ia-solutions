@@ -13,9 +13,14 @@ const componentConfigurations = vi.hoisted(
     () =>
         new Map<
             string,
-            { inherit?: unknown[]; options?: { autoByContent?: boolean; displayAllowedValues?: string[] } }
+            {
+                inherit?: unknown[];
+                states?: Array<string | { label: string; selectors?: string[] }>;
+                options?: { autoByContent?: boolean; displayAllowedValues?: string[] };
+            }
         >()
 );
+const popupStore = vi.hoisted(() => ({ instances: {} as Record<string, StyleSourceData> }));
 
 vi.mock('@/_common/helpers/component/component', () => ({
     getComponentBaseConfiguration: vi.fn((type: string, baseId: string) =>
@@ -28,7 +33,7 @@ vi.mock('@/_common/helpers/component/component', () => ({
 }));
 
 vi.mock('@/pinia/popup', () => ({
-    usePopupStore: vi.fn(() => ({ instances: {} })),
+    usePopupStore: vi.fn(() => popupStore),
 }));
 
 vi.mock('@/pinia/componentBases', () => ({
@@ -66,6 +71,7 @@ beforeEach(() => {
     elements = reactive<Record<string, StyleSourceData>>({});
     sections = reactive<Record<string, StyleSourceData>>({});
     libraryComponents = reactive<Record<string, StyleSourceData>>({});
+    popupStore.instances = reactive<Record<string, StyleSourceData>>({});
 
     vi.stubGlobal('wwLib', {
         $store: {
@@ -232,6 +238,125 @@ describe('styleCompilerReader source indexing', () => {
         }
     });
 
+    it('does not recompile parent-state targets when an unrelated element is added', async () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [{ id: 'hover', label: 'Hover' }] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                style: {
+                    _wwParent_parent_hover_default: { opacity: 0.5 },
+                },
+            },
+        };
+
+        const sources = createEditorStyleCompilerSources();
+        const editorReader = sources.reader;
+        const readsByUid = new Map<string, number>();
+        const reader = {
+            ...editorReader,
+            element(uid: string) {
+                readsByUid.set(uid, (readsByUid.get(uid) || 0) + 1);
+                return editorReader.element(uid);
+            },
+        };
+        const run = createStyleCompiler().compileStylesheet({
+            scope: createReactiveCompileScope(sources.scope),
+            reader,
+            stylesheet: createStringStyleSheetAdapter(),
+            runtime: {
+                createScope: effectScope,
+                effect: callback => watchEffect(callback),
+            },
+        });
+
+        try {
+            await nextTick();
+            readsByUid.clear();
+            elements.unrelated = { uid: 'unrelated', parentSectionId: 'sectionA' };
+            await nextTick();
+
+            expect([...readsByUid.entries()]).toEqual([['unrelated', 1]]);
+        } finally {
+            run.stop();
+        }
+    });
+
+    it('keeps GoodNow-scale parent-state targets idle during popup and paste mutations', async () => {
+        const projectElementCount = 14_500;
+        const activePageElementCount = 3_718;
+        const parentStateTargetCount = 207;
+        const parentStateRuleCount = 250;
+
+        for (let index = 0; index < projectElementCount; index += 1) {
+            const uid = `element${index}`;
+            elements[uid] = {
+                uid,
+                parentSectionId: index < activePageElementCount ? 'sectionA' : 'sectionB',
+            };
+        }
+        for (let index = 0; index < parentStateTargetCount; index += 1) {
+            const parentUid = `element${parentStateTargetCount + index}`;
+            const style = {
+                [`_wwParent_${parentUid}_hover_default`]: { opacity: 0.5 },
+            };
+            const parentStates = [{ id: 'hover', label: 'Hover' }];
+            if (index < parentStateRuleCount - parentStateTargetCount) {
+                style[`_wwParent_${parentUid}_focus_default`] = { opacity: 0.75 };
+                parentStates.push({ id: 'focus', label: 'Focus' });
+            }
+            elements[`element${index}`]._state = { style };
+            elements[parentUid]._state = { states: parentStates };
+        }
+
+        const sources = createEditorStyleCompilerSources();
+        const editorReader = sources.reader;
+        const readsByUid = new Map<string, number>();
+        const reader = {
+            ...editorReader,
+            element(uid: string) {
+                readsByUid.set(uid, (readsByUid.get(uid) || 0) + 1);
+                return editorReader.element(uid);
+            },
+        };
+        const run = createStyleCompiler().compileStylesheet({
+            scope: createReactiveCompileScope(sources.scope),
+            reader,
+            stylesheet: createStringStyleSheetAdapter(),
+            runtime: {
+                createScope: effectScope,
+                effect: callback => watchEffect(callback),
+            },
+        });
+
+        try {
+            await nextTick();
+            readsByUid.clear();
+
+            popupStore.instances.popupInstance = { uid: 'popupInstance' };
+            await nextTick();
+            expect([...readsByUid.keys()]).toEqual(['popupInstance']);
+
+            readsByUid.clear();
+            delete popupStore.instances.popupInstance;
+            await nextTick();
+            expect(readsByUid.size).toBe(0);
+
+            for (let index = 0; index < 3; index += 1) {
+                const uid = `pastedElement${index}`;
+                elements[uid] = { uid, parentSectionId: 'sectionA' };
+            }
+            await nextTick();
+            expect([...readsByUid.keys()]).toEqual(['pastedElement0', 'pastedElement1', 'pastedElement2']);
+        } finally {
+            run.stop();
+        }
+    });
+
     it('recompiles only the replaced target when membership is unchanged', async () => {
         for (let index = 0; index < 100; index += 1) {
             const uid = `element${index}`;
@@ -305,6 +430,186 @@ describe('styleCompilerReader source indexing', () => {
             stateId: 'hover',
             selector: '.ww-element-parent',
         });
+    });
+
+    it('ignores undeclared native states persisted outside the state list', () => {
+        elements.elementA = {
+            uid: 'elementA',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [],
+                style: { _wwHover_default: { boxShadow: '0 0 0 3px blue' } },
+                classes: { _wwActive: ['classA'] },
+                subClasses: { _wwFocusVisible: ['classB'] },
+            },
+            content: { _wwFocus_default: { text: 'orphaned focus content' } },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('elementA')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('keeps native states that are explicitly declared', () => {
+        elements.elementA = {
+            uid: 'elementA',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwHover', label: 'Hover' }],
+                style: { _wwHover_default: { boxShadow: '0 0 0 3px blue' } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('elementA')?.states();
+
+        expect(states).toEqual([{ id: '_wwHover', label: 'Hover' }]);
+    });
+
+    it('ignores undeclared parent native states persisted outside the state list', () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [{ id: '_wwHover', label: 'Hover' }] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [],
+                style: { _wwParent_parent__wwHover_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('keeps parent native states that are explicitly declared', () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [{ id: '_wwHover', label: 'Hover' }] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwParent_parent__wwHover', label: 'Parent:Hover' }],
+                style: { _wwParent_parent__wwHover_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([
+            {
+                id: '_wwParent_parent__wwHover',
+                parent: {
+                    uid: 'parent',
+                    stateId: '_wwHover',
+                    selector: '.ww-element-parent',
+                },
+            },
+        ]);
+    });
+
+    it('ignores declared parent native states that no longer exist on the parent', () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwParent_parent__wwHover', label: 'Parent:Hover' }],
+                style: { _wwParent_parent__wwHover_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('ignores custom parent states that no longer exist on the parent', () => {
+        elements.parent = {
+            uid: 'parent',
+            parentSectionId: 'sectionA',
+            _state: { states: [] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwParent_parent_open', label: 'Parent:Open' }],
+                style: { _wwParent_parent_open_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('ignores parent states whose parent source no longer exists', () => {
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [{ id: '_wwParent_deletedParent_open', label: 'Deleted parent:Open' }],
+                style: { _wwParent_deletedParent_open_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('ignores undeclared configured-selector states persisted outside the state list', () => {
+        componentConfigurations.set('element:configuredBase', {
+            states: [{ label: 'focus', selectors: ['&:focus-within'] }],
+        });
+        elements.elementA = {
+            uid: 'elementA',
+            wwObjectBaseId: 'configuredBase',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [],
+                style: { focus_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('elementA')?.states();
+
+        expect(states).toEqual([]);
+    });
+
+    it('ignores undeclared parent configured-selector states persisted outside the state list', () => {
+        componentConfigurations.set('element:configuredBase', {
+            states: [{ label: 'focus', selectors: ['&:focus-within'] }],
+        });
+        elements.parent = {
+            uid: 'parent',
+            wwObjectBaseId: 'configuredBase',
+            parentSectionId: 'sectionA',
+            _state: { states: [{ id: 'focus', label: 'focus' }] },
+        };
+        elements.child = {
+            uid: 'child',
+            parentSectionId: 'sectionA',
+            _state: {
+                states: [],
+                style: { _wwParent_parent_focus_default: { opacity: 0.5 } },
+            },
+        };
+
+        const states = createEditorStyleCompilerSources().reader.element('child')?.states();
+
+        expect(states).toEqual([]);
     });
 });
 
@@ -427,6 +732,21 @@ describe('styleCompilerReader component capabilities', () => {
 });
 
 describe('styleCompilerReader library component display capabilities', () => {
+    it('exposes the immediate library root chain for legacy composite layout inheritance', () => {
+        elements.pageInstance = createLibraryInstance('pageInstance', 'libraryA');
+        elements.nestedInstance = createLibraryInstance('nestedInstance', 'libraryB');
+        elements.concreteRoot = createElement('concreteRoot', 'flexRootBase');
+        libraryComponents.libraryA = { rootElementId: 'nestedInstance' };
+        libraryComponents.libraryB = { rootElementId: 'concreteRoot' };
+
+        const pageReader = createEditorStyleCompilerSources().reader.element('pageInstance');
+        const nestedReader = pageReader?.effectiveFallbackSource?.();
+
+        expect(nestedReader?.uid()).toBe('nestedInstance');
+        expect(nestedReader?.effectiveFallbackSource?.()?.uid()).toBe('concreteRoot');
+        expect(nestedReader?.effectiveFallbackSource?.()?.effectiveFallbackSource?.()).toBeNull();
+    });
+
     it('compiles an instance display override with the concrete library root display values', () => {
         elements.libraryRoot = createElement('libraryRoot', 'flexRootBase', true, {
             '_ww-layout_flexDirection': 'row',
