@@ -44,12 +44,14 @@ vi.mock('@better-fetch/fetch', () => ({
     betterFetch: vi.fn(),
 }));
 
-vi.mock('@/_front/integrations/index.js', () => ({
+vi.mock('@/extensions/integrations/index.js', () => ({
     default: {},
 }));
 
 vi.mock('@/pinia/integrations', () => ({
-    useIntegrationsStore: vi.fn(() => ({})),
+    useIntegrationsStore: vi.fn(() => ({
+        getCodeBindings: vi.fn(() => ({})),
+    })),
 }));
 
 vi.mock('@/pinia/backAuth', () => ({

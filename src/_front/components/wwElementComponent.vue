@@ -3,7 +3,7 @@
     <!-- wwFront:start -->
     <component
         :is="vueComponentName"
-        v-if="isRendering"
+        v-if="isRendering && shouldRenderClientIslandContent"
         ref="component"
         :style="elementStyle"
         class="ww-element"
@@ -21,13 +21,13 @@
         @remove-state="removeInternalState"
         @toggle-state="toggleInternalState"
     >
-        <slot></slot
-    ></component>
+        <slot></slot>
+    </component>
     <!-- wwFront:end -->
  </template>
 
 <script>
-import { computed, ref, toRef, reactive, inject, provide, shallowRef, watch, onUnmounted } from 'vue';
+import { computed, ref, toRef, reactive, inject, provide, shallowRef, unref, watch, onUnmounted } from 'vue';
 
 import {
     getComponentVueComponentName,
@@ -44,10 +44,12 @@ import { useComponentStates } from '@/_front/use/useComponentStates';
 import { useComponentActions } from '@/_common/use/useActions';
 import { useElementLocalContext } from '@/_front/use/useElementLocalContext';
 import { useStyleCompilerDynamicVariables } from '@/_front/use/useStyleCompilerDynamicVariables';
+import { getStyleAtomicClassesForSource } from '@/_front/services/styleCompilerAtomicClasses';
 import { consumeLayoutItemStyle, useLayoutItemAttribute, useLayoutItemIndex } from '@/_front/use/useLayoutItemMarker';
 import { LAYOUT_ITEM_ATTRIBUTE } from '@/_common/helpers/styleCompiler/layoutContract';
 import { createComponentId } from '@/_front/services/componentIds';
 import { getElementStyleResetClasses } from '@/_front/helpers/elementStyleReset';
+import { useClientIslandRendering } from '@/_front/rendering/useClientIslandRendering';
 
 function mergeStateAttributes(...values) {
     const states = new Set();
@@ -79,6 +81,8 @@ export default {
         libraryComponentData: { type: Object, default: null },
         libraryComponentTriggerEvent: { type: Function, default: null },
         libraryComponentTriggerLibraryComponentEvent: { type: Function, default: null },
+        libraryComponentRuntimeStyleSourceUid: { type: String, default: null },
+        libraryComponentRuntimeStyleContext: { type: Object, default: null },
         extraStyle: { type: Object, default: null },
      },
     // update:child-selected and update:is-selected are used by useElementSelection
@@ -94,10 +98,13 @@ export default {
         const bindingContext = inject('bindingContext', null);
         const sectionId = inject('sectionId', null);
         const wwLibraryComponentUid_ = inject('wwLibraryComponentUid_', null);
+        const componentDataRef = computed(() => wwLib.$store.getters['websiteData/getWwObjects']?.[props.uid]);
+        const styleSourceId = computed(() => componentDataRef.value?._si);
 
         provide('wwLayoutContext', {});
         provide('_wwElementUid', props.uid);
         provide('_wwElementComponentId', id);
+        provide('_wwElementStyleSourceId', styleSourceId);
 
  
         const libraryComponentContext = inject('_wwLibraryComponentContext', null);
@@ -150,15 +157,9 @@ export default {
             libraryComponentDataRef: computed(() => props.libraryComponentData),
          });
  
-        useStyleCompilerDynamicVariables({
-            sourceUid: toRef(props, 'uid'),
-            context,
-            targets: {
-                element: component,
-            },
-        });
         const styleClasses = computed(() => [
-            createElementClassName(props.uid),
+            createElementClassName(props.uid, styleSourceId.value),
+            ...getStyleAtomicClassesForSource(props.uid, 'element'),
             ...getElementStyleResetClasses(getComponentConfiguration('element', props.uid)),
         ]);
 
@@ -254,6 +255,31 @@ export default {
         // TODO if we are not recalculate this too often? even if it is static
         // The function is call in different places in the setup functions
         const config = getComponentConfiguration('element', props.uid);
+        const vueComponentName = getComponentVueComponentName('element', props.uid);
+        const shouldRenderClientIslandContent = useClientIslandRendering({
+            type: 'element',
+            uid: props.uid,
+            componentName: vueComponentName,
+            forceClientOnly: () => config?.staticRendering === false,
+        });
+        const renderedRuntimeComponentId = computed(() =>
+            isRendering.value && unref(shouldRenderClientIslandContent) ? id : undefined
+        );
+
+        useStyleCompilerDynamicVariables({
+            sourceUid: toRef(props, 'uid'),
+            context,
+            targets: { element: component },
+            targetIds: { element: renderedRuntimeComponentId },
+        });
+        if (props.libraryComponentRuntimeStyleSourceUid) {
+            useStyleCompilerDynamicVariables({
+                sourceUid: toRef(props, 'libraryComponentRuntimeStyleSourceUid'),
+                context: props.libraryComponentRuntimeStyleContext || {},
+                targets: { element: component },
+                targetIds: { element: renderedRuntimeComponentId },
+            });
+        }
 
         return {
             component,
@@ -262,6 +288,8 @@ export default {
             componentId: id,
             sectionId,
             configuration: config,
+            vueComponentName,
+            shouldRenderClientIslandContent,
             bindingContext,
             rawContent,
              context,
@@ -287,9 +315,6 @@ export default {
          };
     },
     computed: {
-        vueComponentName() {
-            return getComponentVueComponentName('element', this.uid);
-        },
         /*=============================================m_ÔÔ_m=============================================\
             CONFIG / STATE
         \================================================================================================*/

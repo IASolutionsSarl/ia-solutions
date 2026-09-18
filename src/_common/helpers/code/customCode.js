@@ -3,6 +3,12 @@ import { computed } from 'vue';
 import { isFile, isFileList } from '@/_common/helpers/code/filePayload.js';
 import { _wwFormulas } from '@/_common/helpers/code/wwFormulas';
 import { workflowFunctions } from '@/_common/helpers/code/workflows';
+import { useIntegrationsStore } from '@/pinia/integrations';
+import {
+    isStaticRenderPermissionError,
+    resolveStaticBinding,
+    StaticRenderFatalError,
+} from '@/_front/rendering/staticRenderingContext';
 
 const AsyncFunction = async function () {}.constructor;
 
@@ -59,6 +65,8 @@ export const _pluginFormulas = computed(() => {
     }, {});
 });
 
+export const _integrations = () => useIntegrationsStore(wwLib.$pinia).getCodeBindings();
+
 // eslint-disable-next-line no-unused-vars
 export function evaluateCode({ code, filter, sort, __wwmap, throwError = false }, context, event, args) {
  
@@ -72,6 +80,7 @@ export function evaluateCode({ code, filter, sort, __wwmap, throwError = false }
             'variables',
             'pluginVariables',
             'globalContext',
+            'integrations',
             'context',
             'event',
             ...(args?.names || '').split(', '),
@@ -85,12 +94,14 @@ export function evaluateCode({ code, filter, sort, __wwmap, throwError = false }
             wwLib.globalVariables.customCodeVariables,
             wwLib.wwPlugins,
             wwLib.globalContext,
+            _integrations(),
             context,
             event,
             ...(args?.value || [])
         );
         return mapFilterSortData(rawValue, filter, sort, __wwmap, context, event, args, throwError);
     } catch (error) {
+        throwStaticRenderPermissionError(error);
         const formulaError = new FormulaError(`Formula evaluation error: ${error.message}`, {
             originalError: error,
             formulaCode: code,
@@ -114,6 +125,7 @@ export async function executeCode(code, context, event, wwUtils) {
             'variables',
             'pluginVariables',
             'globalContext',
+            'integrations',
             'utilsFunctions',
             'context',
             'event',
@@ -128,6 +140,7 @@ export async function executeCode(code, context, event, wwUtils) {
             wwLib.globalVariables.customCodeVariables,
             wwLib.wwPlugins,
             wwLib.globalContext,
+            _integrations(),
             workflowFunctions,
             context,
             event,
@@ -156,6 +169,7 @@ export function evaluateFormula({ code, filter, sort, __wwmap, throwError = fals
             'variables',
             'pluginVariables',
             'globalContext',
+            'integrations',
             'context',
             'event',
             ...(args?.names || '').split(', '),
@@ -169,12 +183,14 @@ export function evaluateFormula({ code, filter, sort, __wwmap, throwError = fals
             wwLib.globalVariables.customCodeVariables,
             wwLib.wwPlugins,
             wwLib.globalContext,
+            _integrations(),
             context,
             event,
             ...(args?.value || [])
         );
         return mapFilterSortData(rawValue, filter, sort, __wwmap, context, event, args, throwError);
     } catch (error) {
+        throwStaticRenderPermissionError(error);
         const message =
             error.message === ERROR_CODES.UNEXPECTED_END_OF_FORMULA ? 'Unexpected end of formula' : error.message;
         const formulaError = new FormulaError(`Formula evaluation error: ${message}`, {
@@ -207,6 +223,7 @@ export function evaluateGlobalFormula(__wwformula, __wwcontext, parameters) {
                     );`
         )(__wwformula, __wwcontext, evaluateFormula, evaluateCode, args);
     } catch (error) {
+        throwStaticRenderPermissionError(error);
         if (error instanceof FormulaError) {
             if (throwError) throw error;
             return { error };
@@ -248,6 +265,12 @@ export function getJsValue({ code, filter, sort, __wwmap, throwError = false }, 
 export function getFormulaValue({ code, filter, sort, __wwmap, throwError = false }, context, event, args) {
     const { value } = evaluateFormula({ code, filter, sort, __wwmap, throwError }, context, event, args);
     return value;
+}
+
+function throwStaticRenderPermissionError(error) {
+    if (error instanceof StaticRenderFatalError) throw error;
+    if (!isStaticRenderPermissionError(error)) return;
+    throw new StaticRenderFatalError(`Static renderer permission denied: ${error.message}`, { cause: error });
 }
 
 export function sortData(data, sort, context, event, args, throwError = false) {
@@ -463,6 +486,9 @@ export function getValue(
     context,
     { event, recursive = true, defaultUndefined, args, throwError = false } = {}
 ) {
+    const staticBinding = resolveStaticBinding(rawValue);
+    if (staticBinding) return _.cloneDeep(staticBinding.value);
+
     if (rawValue === undefined) return _.cloneDeep(defaultUndefined);
     if (!rawValue) return rawValue;
 

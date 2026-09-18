@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router';
 
 import wwPage from './views/wwPage.vue';
 
@@ -11,6 +11,9 @@ import {
 import { convertPathToRouterFormat } from '@/_common/helpers/urlParametersParsing';
 import { getRuntimeEnvironment } from '@/helpers/frontEnv.js';
 import { useBackAuthStore } from '@/pinia/backAuth.js';
+/* wwFront:start */
+import { isStaticRenderingActive } from '@/_front/rendering/staticRenderingContext';
+/* wwFront:end */
 
 /**
  * @typedef {import('vue-router').Router} Router
@@ -72,8 +75,8 @@ const scrollBehavior = to => {
 /* wwFront:start */
 import pluginsSettings from '../../plugins-settings.json';
 
-window.wwg_designInfo = {"id":"ee65778e-54c1-4913-a6c9-c9080ef99891","homePageId":"16ed9e8d-061e-4f27-bb4c-b1af863b4ec5","authPluginId":null,"baseTag":null,"defaultTheme":"light","langs":[{"lang":"en","default":true,"isDefaultPath":false}],"background":{},"workflows":[],"back":{"isServerSetup":{"staging":false,"production":false}},"auth":null,"pages":[{"id":"c11eb45b-0a3a-4642-a4fe-10bf9e05a023","linkId":"c11eb45b-0a3a-4642-a4fe-10bf9e05a023","name":"IA Express","folder":null,"paths":{"en":"iaexpress","default":"iaexpress"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"b6c8cc9e-6f2b-4f15-8c34-873a6bebe887","sectionTitle":"Main Content Section","linkId":"53747880-999e-4895-89c1-4791b2f4c34c"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"IA Express | Intégrez l'IA en entreprise simplement et durablement","fr":""},"meta":{"desc":{"en":"Découvrez IA Express, une méthode complète pour intégrer l'intelligence artificielle dans votre organisation : gouvernance, assistants métiers, formations, accompagnement et IA hébergées en Suisse ou en Europe."},"keywords":{},"__typename":"PageMeta","socialDesc":{"en":"Une approche complète pour intégrer l'intelligence artificielle : gouvernance, assistants métiers, formations, accompagnement et IA hébergées en Suisse ou en Europe."},"socialTitle":{"en":"IA Express | La méthode d'intégration de l'IA en entreprise"},"structuredData":{}},"metaImage":"images/Methode_IA_Express.png?_wwcv=51","security":{}},{"id":"f361ad68-b768-451c-a56b-8d9234fc6623","linkId":"f361ad68-b768-451c-a56b-8d9234fc6623","name":"Formations","folder":null,"paths":{"en":"formations","default":"formations"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"48ea9dfb-613f-4b58-8563-3b0bd0ab15f0","sectionTitle":"Main Content Section","linkId":"7638c90e-efe0-4409-8961-a082c58a2526"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"Formation IA en entreprise, conférences et ateliers | IA Solutions","fr":""},"meta":{"desc":{"en":"IA Solutions propose des formations en intelligence artificielle, des conférences de sensibilisation et des ateliers sur mesure pour les entreprises, collectivités et organisations en Suisse romande."},"keywords":{},"__typename":"PageMeta","socialDesc":{"en":"Développez les compétences IA de vos équipes grâce à nos conférences, formations et ateliers personnalisés en Suisse romande."},"socialTitle":{"en":"Formation IA en entreprise | IA Solutions"},"structuredData":{}},"metaImage":"images/Ariaq.jpg?_wwcv=51","security":{}},{"id":"16ed9e8d-061e-4f27-bb4c-b1af863b4ec5","linkId":"16ed9e8d-061e-4f27-bb4c-b1af863b4ec5","name":"Home","folder":null,"paths":{"default":"home"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"1fda5507-590e-407a-a042-074f721c414f","sectionTitle":"Main Content Section","linkId":"b27aa3fd-aea0-450b-93b8-3bf8d1a2f6a1"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"IA Solutions Suisse | IA Express, gouvernance IA, formations et IA hébergées en Suisse","fr":""},"meta":{"desc":{"en":"IA Solutions accompagne les entreprises dans l'intégration de l'intelligence artificielle : gouvernance IA, formations, assistants métiers, IA Express, SwissNote et IA hébergées en Suisse."},"keywords":{},"socialDesc":{"en":"Découvrez IA Express : une méthode complète pour intégrer l'IA dans votre entreprise avec gouvernance, formations, assistants métiers et IA hébergées en Suisse."},"socialTitle":{"en":"IA Solutions | Déployez l'intelligence artificielle dans votre organisation"},"structuredData":{}},"metaImage":"images/_LLV7268.jpg?_wwcv=51","security":{}},{"id":"2905c405-7cf9-44da-b852-c025b0aad585","linkId":"2905c405-7cf9-44da-b852-c025b0aad585","name":"A Propos","folder":null,"paths":{"en":"apropos","default":"apropos"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"38ef8c75-995b-4585-9bf6-beb789eabf33","sectionTitle":"Main Content Section","linkId":"2d7f860c-b1ad-4d01-8dca-3ee010c51c84"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"À propos | IA Solutions, spécialiste de l'intégration de l'intelligence artificielle en Suisse","fr":""},"meta":{"desc":{"en":"Découvrez IA Solutions, société suisse spécialisée dans l'intégration de l'intelligence artificielle. Gouvernance IA, formations, assistants métiers, automatisation et IA hébergées en Suisse."},"keywords":{},"__typename":"PageMeta","socialDesc":{"en":"Découvrez l'approche d'IA Solutions pour accompagner les organisations dans l'intégration de l'intelligence artificielle de manière concrète, souveraine et conforme."},"socialTitle":{"en":"À propos d'IA Solutions"},"structuredData":{}},"metaImage":"images/Photoshop_Yann_site.jpg?_wwcv=51","security":{}},{"id":"df730216-c641-4bdf-af8c-72fb44799b13","linkId":"df730216-c641-4bdf-af8c-72fb44799b13","name":"SwissNote","folder":null,"paths":{"en":"swissnote","default":"swissnote"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"05d894b2-b8e8-4742-98a5-a109d034d1b5","sectionTitle":"Main Content Section","linkId":"5b68739b-2dc5-4f33-9d24-af2556a3fd5c"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"SwissNote | Comptes rendus et procès-verbaux IA | IA Solutions Suisse","fr":""},"meta":{"desc":{"en":"SwissNote transforme vos réunions, entretiens et dictées vocales en comptes rendus, procès-verbaux et rapports structurés. Solution IA suisse, personnalisable, multilingue et conforme à la LPD."},"keywords":{},"__typename":"PageMeta","socialDesc":{"en":"Enregistrez une réunion ou importez un fichier audio. SwissNote génère automatiquement des comptes rendus, procès-verbaux et rapports structurés selon vos modèles personnalisés. Prise de PV ou rapport automatique suisse, conforme LPD"},"socialTitle":{"en":"SwissNote | Comptes rendus et procès-verbaux assistés par IA"},"structuredData":{}},"metaImage":"images/Logo_moderne_de_SwissNote__endoftext_petit.png?_wwcv=51","security":{}}],"plugins":[]};
-window.wwg_cacheVersion = 51;
+window.wwg_designInfo = {"id":"ee65778e-54c1-4913-a6c9-c9080ef99891","homePageId":"16ed9e8d-061e-4f27-bb4c-b1af863b4ec5","authPluginId":null,"baseTag":null,"defaultTheme":"light","langs":[{"lang":"en","default":true,"isDefaultPath":false}],"background":{},"workflows":[],"back":{"isServerSetup":{"staging":false,"production":false}},"auth":null,"pages":[{"id":"c11eb45b-0a3a-4642-a4fe-10bf9e05a023","linkId":"c11eb45b-0a3a-4642-a4fe-10bf9e05a023","name":"IA Express","folder":null,"paths":{"en":"iaexpress","default":"iaexpress"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"b6c8cc9e-6f2b-4f15-8c34-873a6bebe887","sectionTitle":"Main Content Section","linkId":"53747880-999e-4895-89c1-4791b2f4c34c"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"IA Express | Intégrez l'IA en entreprise simplement et durablement","fr":""},"meta":{"desc":{"en":"Découvrez IA Express, une méthode complète pour intégrer l'intelligence artificielle dans votre organisation : gouvernance, assistants métiers, formations, accompagnement et IA hébergées en Suisse ou en Europe."},"keywords":{},"__typename":"PageMeta","socialDesc":{"en":"Une approche complète pour intégrer l'intelligence artificielle : gouvernance, assistants métiers, formations, accompagnement et IA hébergées en Suisse ou en Europe."},"socialTitle":{"en":"IA Express | La méthode d'intégration de l'IA en entreprise"},"structuredData":{}},"metaImage":"images/Methode_IA_Express.png?_wwcv=52","security":{}},{"id":"f361ad68-b768-451c-a56b-8d9234fc6623","linkId":"f361ad68-b768-451c-a56b-8d9234fc6623","name":"Formations","folder":null,"paths":{"en":"formations","default":"formations"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"48ea9dfb-613f-4b58-8563-3b0bd0ab15f0","sectionTitle":"Main Content Section","linkId":"7638c90e-efe0-4409-8961-a082c58a2526"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"Formation IA en entreprise, conférences et ateliers | IA Solutions","fr":""},"meta":{"desc":{"en":"IA Solutions propose des formations en intelligence artificielle, des conférences de sensibilisation et des ateliers sur mesure pour les entreprises, collectivités et organisations en Suisse romande."},"keywords":{},"__typename":"PageMeta","socialDesc":{"en":"Développez les compétences IA de vos équipes grâce à nos conférences, formations et ateliers personnalisés en Suisse romande."},"socialTitle":{"en":"Formation IA en entreprise | IA Solutions"},"structuredData":{}},"metaImage":"images/Ariaq.jpg?_wwcv=52","security":{}},{"id":"16ed9e8d-061e-4f27-bb4c-b1af863b4ec5","linkId":"16ed9e8d-061e-4f27-bb4c-b1af863b4ec5","name":"Home","folder":null,"paths":{"default":"home"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"1fda5507-590e-407a-a042-074f721c414f","sectionTitle":"Main Content Section","linkId":"b27aa3fd-aea0-450b-93b8-3bf8d1a2f6a1"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"IA Solutions Suisse | IA Express, gouvernance IA, formations et IA hébergées en Suisse","fr":""},"meta":{"desc":{"en":"IA Solutions accompagne les entreprises dans l'intégration de l'intelligence artificielle : gouvernance IA, formations, assistants métiers, IA Express, SwissNote et IA hébergées en Suisse."},"keywords":{},"socialDesc":{"en":"Découvrez IA Express : une méthode complète pour intégrer l'IA dans votre entreprise avec gouvernance, formations, assistants métiers et IA hébergées en Suisse."},"socialTitle":{"en":"IA Solutions | Déployez l'intelligence artificielle dans votre organisation"},"structuredData":{}},"metaImage":"images/_LLV7268.jpg?_wwcv=52","security":{}},{"id":"2905c405-7cf9-44da-b852-c025b0aad585","linkId":"2905c405-7cf9-44da-b852-c025b0aad585","name":"A Propos","folder":null,"paths":{"en":"apropos","default":"apropos"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"38ef8c75-995b-4585-9bf6-beb789eabf33","sectionTitle":"Main Content Section","linkId":"2d7f860c-b1ad-4d01-8dca-3ee010c51c84"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"À propos | IA Solutions, spécialiste de l'intégration de l'intelligence artificielle en Suisse","fr":""},"meta":{"desc":{"en":"Découvrez IA Solutions, société suisse spécialisée dans l'intégration de l'intelligence artificielle. Gouvernance IA, formations, assistants métiers, automatisation et IA hébergées en Suisse."},"keywords":{},"__typename":"PageMeta","socialDesc":{"en":"Découvrez l'approche d'IA Solutions pour accompagner les organisations dans l'intégration de l'intelligence artificielle de manière concrète, souveraine et conforme."},"socialTitle":{"en":"À propos d'IA Solutions"},"structuredData":{}},"metaImage":"images/Photoshop_Yann_site.jpg?_wwcv=52","security":{}},{"id":"df730216-c641-4bdf-af8c-72fb44799b13","linkId":"df730216-c641-4bdf-af8c-72fb44799b13","name":"SwissNote","folder":null,"paths":{"en":"swissnote","default":"swissnote"},"langs":["en"],"cmsDataSetPath":null,"sections":[{"uid":"e47160cb-2992-422a-850a-cbe60ea835b1","sectionTitle":"Top Nav","linkId":"f7ca52d4-ea29-4046-9b4d-239a3e04808c"},{"uid":"05d894b2-b8e8-4742-98a5-a109d034d1b5","sectionTitle":"Main Content Section","linkId":"5b68739b-2dc5-4f33-9d24-af2556a3fd5c"},{"uid":"5f4de527-aeb0-4341-8493-4a8b7802ebf8","sectionTitle":"Footer Section","linkId":"c946f401-8877-4f1f-9c82-cf97543a7f4d"}],"pageUserGroups":[],"title":{"en":"SwissNote | Comptes rendus et procès-verbaux IA | IA Solutions Suisse","fr":""},"meta":{"desc":{"en":"SwissNote transforme vos réunions, entretiens et dictées vocales en comptes rendus, procès-verbaux et rapports structurés. Solution IA suisse, personnalisable, multilingue et conforme à la LPD."},"keywords":{},"__typename":"PageMeta","socialDesc":{"en":"Enregistrez une réunion ou importez un fichier audio. SwissNote génère automatiquement des comptes rendus, procès-verbaux et rapports structurés selon vos modèles personnalisés. Prise de PV ou rapport automatique suisse, conforme LPD"},"socialTitle":{"en":"SwissNote | Comptes rendus et procès-verbaux assistés par IA"},"structuredData":{}},"metaImage":"images/Logo_moderne_de_SwissNote__endoftext_petit.png?_wwcv=52","security":{}}],"plugins":[]};
+window.wwg_cacheVersion = 52;
 window.wwg_pluginsSettings = pluginsSettings;
 window.wwg_disableManifest = false;
 
@@ -82,6 +85,7 @@ const defaultLang = window.wwg_designInfo.langs.find(({ default: isDefault }) =>
     lang: 'en',
     default: true,
 };
+const isServerRendering = import.meta.env.SSR;
 
 /**
  * @param {Page} page
@@ -111,77 +115,20 @@ const registerRoute = (page, lang, forcedPath) => {
             wwLib.wwLang.defaultLang = defaultLang.lang;
             wwLib.$store.dispatch('front/setLang', lang.lang);
 
-            const backAuthStore = useBackAuthStore(wwLib.$pinia);
-            if (!wwLib.wwAuth.plugin) {
-                if (!backAuthStore.projectAuth && window.wwg_designInfo.auth) {
-                    backAuthStore.setProjectAuth(window.wwg_designInfo.auth);
-                }
-            }
-
-            //Init plugins
-            await initializePlugins();
-
-            //Init integration instances
-            await initializeIntegrationInstances();
-
-            if (!wwLib.wwAuth.plugin) {
-                await backAuthStore.refresh();
-                const projectAuth = backAuthStore.projectAuth || {};
-
-                //Check if private page
-                if (page.security?.accessRule === 'authenticated') {
-                    if (!backAuthStore.isAuthenticated) {
-                        window.location.href = `${wwLib.wwPageHelper.getPagePath(
-                            projectAuth.unauthenticatedPageId
-                        )}?_source=${to.path}`;
-                        return null;
-                    } else if (page.security?.accessRoles?.length) {
-                        const hasAccess =
-                            page.security.accessRolesCondition === 'AND'
-                                ? backAuthStore.matchAllRoles(page.security.accessRoles)
-                                : backAuthStore.matchAnyRoles(page.security.accessRoles);
-                        if (!hasAccess) {
-                            window.location.href = `${wwLib.wwPageHelper.getPagePath(
-                                projectAuth.unauthorizedPageId
-                            )}?_source=${to.path}`;
-                            return null;
-                        }
-                    }
-                }
-            } else {
-                // Deprecated legacy auth plugins, to remove in the future
-                if (page.pageUserGroups?.length) {
-                    await wwLib.wwAuth.init();
-
-                    // Redirect to not sign in page if not logged
-                    if (!wwLib.wwAuth.getIsAuthenticated()) {
-                        window.location.href = `${wwLib.wwPageHelper.getPagePath(
-                            wwLib.wwAuth.getUnauthenticatedPageId()
-                        )}?_source=${to.path}`;
-
-                        return null;
-                    }
-
-                    //Check roles are required
-                    if (
-                        page.pageUserGroups.length > 1 &&
-                        !wwLib.wwAuth.matchUserGroups(page.pageUserGroups.map(({ userGroup }) => userGroup))
-                    ) {
-                        window.location.href = `${wwLib.wwPageHelper.getPagePath(
-                            wwLib.wwAuth.getUnauthorizedPageId()
-                        )}?_source=${to.path}`;
-
-                        return null;
-                    }
-                }
+            if (!isStaticRenderingActive()) {
+                const canContinue = await initializePageRuntime(page, to);
+                if (!canContinue) return null;
             }
 
             try {
-                await import(`@/pages/${page.id.split('_')[0]}.js`);
+                const { default: registerPageComponents } = await import(`@/pages/${page.id.split('_')[0]}.js`);
+                await registerPageComponents(window.vm);
                 await wwLib.wwWebsiteData.fetchPage(page.id);
 
                 //Scroll to section or on top after page change
-                if (to.hash) {
+                if (isStaticRenderingActive()) {
+                    return;
+                } else if (to.hash) {
                     const targetElement = document.getElementById(to.hash.replace('#', ''));
                     if (targetElement) targetElement.scrollIntoView();
                 } else {
@@ -191,6 +138,7 @@ const registerRoute = (page, lang, forcedPath) => {
                 return;
             } catch (err) {
                 wwLib.$store.dispatch('front/showPageLoadProgress', false);
+                if (isStaticRenderingActive()) throw err;
 
                 if (err.redirectUrl) {
                     return { path: err.redirectUrl || '404' };
@@ -236,56 +184,137 @@ if (page404) {
     });
 }
 
-/** @type {RouterOptions} */
-let routerOptions;
-
 const isProd = getRuntimeEnvironment() === 'production';
 
-if (isProd && window.wwg_designInfo.baseTag?.href) {
-    let baseTag = window.wwg_designInfo.baseTag.href;
-    if (!baseTag.startsWith('/')) {
-        baseTag = '/' + baseTag;
-    }
-    if (!baseTag.endsWith('/')) {
-        baseTag += '/';
+async function initializePageRuntime(page, route) {
+    const backAuthStore = useBackAuthStore(wwLib.$pinia);
+    if (!wwLib.wwAuth.plugin && !backAuthStore.projectAuth && window.wwg_designInfo.auth) {
+        backAuthStore.setProjectAuth(window.wwg_designInfo.auth);
     }
 
-    routerOptions = {
-        history: createWebHistory(baseTag),
-        routes,
-    };
-} else {
-    routerOptions = {
-        history: createWebHistory(),
-        routes,
-    };
+    await initializePlugins();
+    await initializeIntegrationInstances();
+
+    if (!wwLib.wwAuth.plugin) {
+        await backAuthStore.refresh();
+        const projectAuth = backAuthStore.projectAuth || {};
+
+        if (page.security?.accessRule !== 'authenticated') return true;
+        if (!backAuthStore.isAuthenticated) {
+            window.location.href = `${wwLib.wwPageHelper.getPagePath(
+                projectAuth.unauthenticatedPageId
+            )}?_source=${route.path}`;
+            return false;
+        }
+        if (!page.security.accessRoles?.length) return true;
+
+        const hasAccess =
+            page.security.accessRolesCondition === 'AND'
+                ? backAuthStore.matchAllRoles(page.security.accessRoles)
+                : backAuthStore.matchAnyRoles(page.security.accessRoles);
+        if (hasAccess) return true;
+
+        window.location.href = `${wwLib.wwPageHelper.getPagePath(
+            projectAuth.unauthorizedPageId
+        )}?_source=${route.path}`;
+        return false;
+    }
+
+    if (!page.pageUserGroups?.length) return true;
+    await wwLib.wwAuth.init();
+
+    if (!wwLib.wwAuth.getIsAuthenticated()) {
+        window.location.href = `${wwLib.wwPageHelper.getPagePath(
+            wwLib.wwAuth.getUnauthenticatedPageId()
+        )}?_source=${route.path}`;
+        return false;
+    }
+
+    if (
+        page.pageUserGroups.length > 1 &&
+        !wwLib.wwAuth.matchUserGroups(page.pageUserGroups.map(({ userGroup }) => userGroup))
+    ) {
+        window.location.href = `${wwLib.wwPageHelper.getPagePath(
+            wwLib.wwAuth.getUnauthorizedPageId()
+        )}?_source=${route.path}`;
+        return false;
+    }
+
+    return true;
 }
 
-router = createRouter({
-    ...routerOptions,
-    scrollBehavior,
-});
+/**
+ * Initializes the current route's traditional runtime dependencies after Vue has
+ * hydrated the static projection. Static rendering remains active until this resolves,
+ * so client islands and dynamic bindings cannot run against a partial runtime.
+ */
+export async function initializeCurrentRouteRuntime() {
+    const route = router.currentRoute.value;
+    const page = window.wwg_designInfo.pages.find(candidate => candidate.id === route.meta.pageId);
+    if (!page) throw new Error(`Unable to initialize runtime for route ${route.fullPath}: page is unavailable.`);
 
-//Trigger on page unload
-let isFirstNavigation = true;
-router.beforeEach(async (to, from) => {
-    if (to.name === from.name) return;
-    if (!isFirstNavigation) await onPageUnload();
-    isFirstNavigation = false;
-    wwLib.globalVariables._navigationId++;
-    return;
-});
+    const canContinue = await initializePageRuntime(page, route);
+    if (!canContinue) return { status: 'redirected' };
+    return { status: 'ready', route };
+}
 
-//Init page
-router.afterEach((to, from, failure) => {
-    wwLib.$store.dispatch('front/showPageLoadProgress', false);
-    let fromPath = from.path;
-    let toPath = to.path;
-    if (!fromPath.endsWith('/')) fromPath = fromPath + '/';
-    if (!toPath.endsWith('/')) toPath = toPath + '/';
-    if (failure || (from.name && toPath === fromPath)) return;
-    initializeData(to);
-});
+/**
+ * Starts the data phase without delaying the mounted lifecycle, matching normal
+ * navigation where collections and workflows may initialize after the first render.
+ */
+export function startCurrentRouteDataInitialization(route) {
+    return initializeData(route);
+}
+
+function createFrontHistory(serverRendering) {
+    if (serverRendering) return createMemoryHistory();
+
+    if (isProd && window.wwg_designInfo.baseTag?.href) {
+        let baseTag = window.wwg_designInfo.baseTag.href;
+        if (!baseTag.startsWith('/')) {
+            baseTag = '/' + baseTag;
+        }
+        if (!baseTag.endsWith('/')) {
+            baseTag += '/';
+        }
+        return createWebHistory(baseTag);
+    }
+
+    return createWebHistory();
+}
+
+export function createFrontRouter({ serverRendering = false } = {}) {
+    const frontRouter = createRouter({
+        history: createFrontHistory(serverRendering),
+        routes,
+        scrollBehavior,
+    });
+
+    //Trigger on page unload
+    let isFirstNavigation = true;
+    frontRouter.beforeEach(async (to, from) => {
+        if (to.name === from.name) return;
+        if (!isFirstNavigation && !serverRendering) await onPageUnload();
+        isFirstNavigation = false;
+        wwLib.globalVariables._navigationId++;
+        return;
+    });
+
+    //Init page
+    frontRouter.afterEach((to, from, failure) => {
+        wwLib.$store.dispatch('front/showPageLoadProgress', false);
+        let fromPath = from.path;
+        let toPath = to.path;
+        if (!fromPath.endsWith('/')) fromPath = fromPath + '/';
+        if (!toPath.endsWith('/')) toPath = toPath + '/';
+        if (failure || (from.name && toPath === fromPath) || serverRendering || isStaticRenderingActive()) return;
+        void initializeData(to);
+    });
+
+    return frontRouter;
+}
+
+router = createFrontRouter({ serverRendering: isServerRendering });
 /* wwFront:end */
 
 export default router;
